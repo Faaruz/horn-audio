@@ -16,6 +16,9 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 
 @Slf4j
@@ -39,10 +42,25 @@ public class HornSoundPlugin extends Plugin
 
 		try
 		{
-			AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(
-                    Objects.requireNonNull(getClass().getResource("/horn.wav"))); // make sure this is in src/main/resources
+			File pluginDir = new File(System.getProperty("user.home"), ".runelite/horn-sound");
+			File customHorn = new File(pluginDir, "horn.wav");
+
+			if (!pluginDir.exists() && pluginDir.mkdirs())
+			{
+				log.info("Created horn-sound plugin directory at {}", pluginDir.getAbsolutePath());
+			}
+
+			// Optional: copy default horn if file doesn't exist
+			if (!customHorn.exists())
+			{
+				copyDefaultHornToFolder(customHorn);
+			}
+
+			AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(customHorn);
 			clip = AudioSystem.getClip();
 			clip.open(audioInputStream);
+
+			log.info("Horn loaded from {}", customHorn.getAbsolutePath());
 		}
 		catch (Exception e)
 		{
@@ -115,6 +133,24 @@ public class HornSoundPlugin extends Plugin
 		}
 	}
 
+	private void copyDefaultHornToFolder(File destinationFile)
+	{
+		try (var in = getClass().getResourceAsStream("/horn.wav"))
+		{
+			if (in == null)
+			{
+				log.warn("Default horn.wav resource not found!");
+				return;
+			}
+
+			Files.copy(in, destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			log.info("Default horn.wav copied to {}", destinationFile.getAbsolutePath());
+		}
+		catch (Exception e)
+		{
+			log.warn("Failed to copy default horn.wav to plugin folder", e);
+		}
+	}
 
 	@Provides
 	HornSoundConfig provideConfig(ConfigManager configManager)

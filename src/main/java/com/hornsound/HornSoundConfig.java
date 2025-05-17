@@ -5,6 +5,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 
+
 @ConfigGroup("Horn Sound")
 public interface HornSoundConfig extends Config
 {
